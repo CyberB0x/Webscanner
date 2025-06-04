@@ -1,0 +1,42 @@
+<!-- scanner/templates/scanner/pdf_template.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+        th { background-color: #f0f0f0; }
+        h1 { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Scan Report</h1>
+    <p><strong>Target URL:</strong> {{ target.url }}</p>
+
+    {% if vulnerabilities %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Severity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vuln in vulnerabilities %}
+                    <tr>
+                        <td>{{ vuln.type }}</td>
+                        <td>{{ vuln.description }}</td>
+                        <td>{{ vuln.severity }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No vulnerabilities found.</p>
+    {% endif %}
+</body>
+</html>
