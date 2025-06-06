@@ -1,0 +1,4 @@
+Django>=4.2
+requests>=2.31
+WeasyPrint>=60.2
+gunicorn>=21.2

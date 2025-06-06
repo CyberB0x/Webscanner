@@ -10,6 +10,7 @@
     <h1 class="mb-4">📋 Scan Report for {{ target.url }}</h1>
 
     {% if vulnerabilities %}
+        <h4 class="mb-3">🔐 Vulnerabilities</h4>
         <table class="table table-bordered table-striped">
             <thead class="table-dark">
                 <tr>
@@ -40,7 +41,32 @@
         <div class="alert alert-success">✅ No vulnerabilities found!</div>
     {% endif %}
 
-    <a href="{% url 'export_pdf' target.id %}" class="btn btn-outline-primary mt-3">📄 Export PDF</a>
+    {% if sqli_results %}
+        <hr>
+        <h4 class="mb-3">🧪 SQL Injection Test Results</h4>
+        <table class="table table-bordered table-hover">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Payload</th>
+                    <th>Response Time</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in sqli_results %}
+                    <tr class="{% if 'возможна' in result.message|lower %}table-danger{% else %}table-success{% endif %}">
+                        <td><code>{{ result.payload }}</code></td>
+                        <td>{{ result.time }}s</td>
+                        <td>{{ result.message }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info mt-4">ℹ️ SQL-инъекционные параметры не найдены или URL не содержит query string.</div>
+    {% endif %}
+
+    <a href="{% url 'export_pdf' target.id %}" class="btn btn-outline-primary mt-4">📄 Export PDF</a>
 </div>
 </body>
 </html>

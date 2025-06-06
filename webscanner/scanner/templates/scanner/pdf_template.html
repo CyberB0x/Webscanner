@@ -1,15 +1,33 @@
-<!-- scanner/templates/scanner/pdf_template.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>PDF Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=DejaVu+Sans&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
-        th { background-color: #f0f0f0; }
-        h1 { margin-bottom: 10px; }
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        h2 {
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
@@ -17,6 +35,7 @@
     <p><strong>Target URL:</strong> {{ target.url }}</p>
 
     {% if vulnerabilities %}
+        <h2>Vulnerabilities Detected</h2>
         <table>
             <thead>
                 <tr>
@@ -37,6 +56,30 @@
         </table>
     {% else %}
         <p>No vulnerabilities found.</p>
+    {% endif %}
+
+    {% if sqli_results %}
+        <h2>SQL Injection Test Results</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Payload</th>
+                    <th>Response Time (s)</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in sqli_results %}
+                    <tr>
+                        <td>{{ result.payload }}</td>
+                        <td>{{ result.time }}</td>
+                        <td>{{ result.message }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No SQL injection results found.</p>
     {% endif %}
 </body>
 </html>

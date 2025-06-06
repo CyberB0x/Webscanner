@@ -1,22 +1,26 @@
-import json
 import requests
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
-from django.template.loader import get_template
-from xhtml2pdf import pisa
 from .models import Target
 from .utils.sqlmap_client import start_sqlmap_scan
+from weasyprint import HTML
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from .sql_injection_checker import test_sql_injection
+
+
 
 
 def format_vulnerabilities(raw_data):
     vulnerabilities = []
     for item in raw_data:
+        vuln_type = item.get("type", "Unknown")
         vulnerabilities.append({
-            "type": item.get("type", "Unknown"),
-            "description": item.get("title", "No description"),
-            "severity": get_severity(item.get("type", ""))
+            "type": vuln_type,
+            "description": get_description(vuln_type),
+            "severity": get_severity(vuln_type)
         })
     return vulnerabilities
+
 
 
 def get_severity(vuln_type):
@@ -35,14 +39,27 @@ def get_severity(vuln_type):
 def get_description(vuln_type):
     vuln_type = str(vuln_type).lower()
     if "error" in vuln_type:
-        return "Ошибка SQL-запроса, позволяющая извлечь информацию о базе данных."
+        return "Ошибка базы данных позволяет определить структуру SQL-запроса."
     elif "boolean" in vuln_type or "blind" in vuln_type:
-        return "Слепая SQL-инъекция, основанная на логических условиях."
+        return "Слепая SQL-инъекция с использованием логических выражений."
     elif "union" in vuln_type:
-        return "SQL-инъекция через объединение нескольких запросов (UNION)."
+        return "UNION-инъекция позволяет извлечь данные из других таблиц."
     elif "time" in vuln_type:
-        return "SQL-инъекция, выявляемая через задержку выполнения (time-based)."
+        return "SQL-инъекция с задержкой времени, возможна без вывода ошибки."
     return "Общая или неизвестная SQL-инъекция."
+
+
+def check_sql(request, pk):
+    target = get_object_or_404(Target, pk=pk)
+    base_url = target.url
+    results = test_sql_injection(base_url)
+
+    # Отобразим в шаблоне
+    return render(request, 'scanner/sql_results.html', {
+        'target': target,
+        'results': results
+    })
+
 
 
 def home(request):
@@ -75,32 +92,38 @@ def report(request, pk):
     result = target.report or {}
     vulns = result.get("data", [])
 
-    # Добавим поле severity к каждой уязвимости
     for vuln in vulns:
         vuln_type = vuln.get("type", "")
         vuln["severity"] = get_severity(vuln_type)
         vuln["description"] = get_description(vuln_type)
 
+    sqli_results = []
+    if "?" in target.url:
+        sqli_results = test_sql_injection(target.url)
+
     return render(request, 'scanner/report.html', {
         'target': target,
         'vulnerabilities': vulns,
+        'sqli_results': sqli_results,  # ← добавили
     })
 
 
-def export_pdf(request, pk):
-    target = get_object_or_404(Target, pk=pk)
+
+def export_pdf(request, target_id):
+    target = Target.objects.get(id=target_id)
     raw_result = target.report or {}
     vulnerabilities = format_vulnerabilities(raw_result.get('data', []))
+    sqli_results = test_sql_injection(target.url)
 
-    template_path = 'scanner/pdf_template.html'
-    context = {'target': target, 'vulnerabilities': vulnerabilities}
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="report_{pk}.pdf"'
+    html_string = render_to_string('scanner/pdf_template.html', {
+        'target': target,
+        'vulnerabilities': vulnerabilities,
+        'sqli_results': sqli_results  # ← добавили
+    })
 
-    template = get_template(template_path)
-    html = template.render(context)
+    pdf_file = HTML(string=html_string).write_pdf()
 
-    pisa_status = pisa.CreatePDF(html, dest=response)
-    if pisa_status.err:
-        return HttpResponse('Ошибка генерации PDF', status=500)
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="scan_report_{target_id}.pdf"'
     return response
+
